@@ -1,0 +1,283 @@
+.reportContainer {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(12px);
+  padding: 2rem;
+  margin-top: 1.5rem;
+  box-shadow: var(--shadow-lg);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.statusHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.statusInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.statusIconWrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statusSuccessIcon {
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--success-text);
+  box-shadow: 0 0 20px var(--success-glow);
+}
+
+.statusErrorIcon {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-text);
+  box-shadow: 0 0 20px var(--danger-glow);
+}
+
+.statusTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.statusSuccessTitle {
+  color: var(--success-text);
+}
+
+.statusErrorTitle {
+  color: var(--danger-text);
+}
+
+.statusSubtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.btnPrimary {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.btnPrimary:hover {
+  background: var(--accent-primary-hover);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.btnSecondary {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+}
+
+.btnSecondary:hover {
+  background: var(--bg-card-hover);
+}
+
+.comparisonBox {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  border-radius: var(--radius-lg);
+  background: var(--comparison-box-bg);
+  border: 1px solid var(--border-glass);
+}
+
+@media (max-width: 640px) {
+  .comparisonBox {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comparisonCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.comparisonLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.comparisonValueDetected {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.detectedSuccess {
+  color: var(--success-text);
+}
+
+.detectedError {
+  color: var(--danger-text);
+}
+
+.comparisonValueExpected {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--info-text);
+}
+
+.checksSection {
+  margin-top: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.checkList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-glass);
+  background: var(--bg-glass);
+  transition: all var(--transition-fast);
+}
+
+.checkCardSuccess {
+  border-left: 3px solid var(--success-text);
+}
+
+.checkCardError {
+  border-left: 3px solid var(--danger-text);
+  background: var(--danger-bg);
+}
+
+.checkIcon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.checkIconSuccess {
+  color: var(--success-text);
+}
+
+.checkIconError {
+  color: var(--danger-text);
+}
+
+.checkContent {
+  flex: 1;
+}
+
+.checkHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.checkLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.checkMessage {
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.checkBadge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+}
+
+.badgeSuccess {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid var(--success-border);
+}
+
+.badgeError {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--danger-border);
+}
+
+.summaryAlert {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.summaryAlertSuccess {
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--success-alert-text);
+}
+
+.summaryAlertError {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-alert-text);
+}

@@ -1,0 +1,122 @@
+.dropzoneContainer {
+  position: relative;
+  border: 2px dashed var(--border-glass);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  padding: 3rem 2rem;
+  text-align: center;
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.dropzoneContainer:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.dropzoneActive {
+  border-color: var(--accent-primary) !important;
+  background: rgba(99, 102, 241, 0.08) !important;
+  box-shadow: 0 0 25px var(--accent-glow) !important;
+  transform: scale(1.01);
+}
+
+.dropzoneValidating {
+  border-color: var(--accent-primary);
+  pointer-events: none;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.iconWrapper {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-lg);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem auto;
+  color: var(--accent-primary);
+  transition: all var(--transition-normal);
+}
+
+.dropzoneContainer:hover .iconWrapper {
+  transform: scale(1.08) rotate(-3deg);
+  background: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 0.925rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.highlightText {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.rulesBadgeContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+.ruleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.775rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
+}
+
+.progressBarContainer {
+  width: 100%;
+  max-width: 320px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  margin: 1.5rem auto 0 auto;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: var(--accent-gradient);
+  border-radius: var(--radius-full);
+  transition: width 0.2s ease;
+}
+
+.spinAnimation {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
