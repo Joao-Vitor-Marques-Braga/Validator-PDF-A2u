@@ -3,9 +3,6 @@ import {
   ShieldCheck,
   FileCheck2,
   Lock,
-  Layers,
-  Sparkles,
-  Cpu,
   Sun,
   Moon,
 } from 'lucide-react';
