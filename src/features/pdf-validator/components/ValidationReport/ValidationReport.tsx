@@ -125,7 +125,7 @@ export const ValidationReport: React.FC<ValidationReportProps> = ({
       )}
 
       {/* Action Card: Conversion & Compression to PDF/A-2u */}
-      {!isValid && onValidateConverted && (
+      {onValidateConverted && (
         <PdfActionCard
           report={report}
           originalFile={originalFile}

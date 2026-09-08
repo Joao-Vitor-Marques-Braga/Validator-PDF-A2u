@@ -101,4 +101,52 @@ describe('Service: PdfConverterService', () => {
     expect(convertedReport.isValid).toBe(true);
     expect(convertedReport.detectedProfile).toBe('PDF/A-2u');
   });
+
+  it('should embed TrueType fonts with ToUnicode CMap and synchronize Info dictionary for COLARE', async () => {
+    const sampleFile = createInvalidProfilePdf17StandardSample();
+    const result = await PdfConverterService.convertToPdfa2u(sampleFile);
+
+    const pdfBuffer = await result.file.arrayBuffer();
+    const pdfText = Buffer.from(pdfBuffer).toString('latin1');
+
+    // Verify TrueType font embedding & ToUnicode table
+    expect(pdfText).toContain('/FontDescriptor');
+    expect(pdfText).toContain('/FontFile2');
+    expect(pdfText).toContain('/ToUnicode');
+
+    // Verify Info dictionary synchronization
+    const { PDFDocument } = await import('pdf-lib');
+    const pdfDoc = await PDFDocument.load(pdfBuffer, { updateMetadata: false });
+    expect(pdfDoc.getTitle()).toBe('relatorio_padrao_pdf17.pdf');
+    expect(pdfDoc.getCreator()).toContain('PDF/A-2u Guard Converter');
+    expect(pdfDoc.getProducer()).toBe('PDF/A-2u Guard Engine');
+    expect(pdfDoc.getCreationDate()).toBeInstanceOf(Date);
+  });
+
+  it('should pass strict Ghostscript PDF/A-2 preflight validation', async () => {
+    const sampleFile = createInvalidProfilePdf17StandardSample();
+    const result = await PdfConverterService.convertToPdfa2u(sampleFile);
+
+    const pdfBuffer = await result.file.arrayBuffer();
+    const fs = await import('node:fs');
+    const { execSync } = await import('node:child_process');
+
+    const tempPdf = '/tmp/test_pdfa2u_validate.pdf';
+    const tempOut = '/tmp/test_pdfa2u_gs_out.pdf';
+    fs.writeFileSync(tempPdf, Buffer.from(pdfBuffer));
+
+    try {
+      const gsOutput = execSync(
+        `gs -dPDFA=2 -dBATCH -dNOPAUSE -sColorConversionStrategy=RGB -sDEVICE=pdfwrite -dPDFACompatibilityPolicy=1 -sOutputFile=${tempOut} ${tempPdf} 2>&1`
+      ).toString();
+
+      // Ghostscript must not fail or report non-conformance
+      expect(gsOutput).not.toContain('reverting to normal output');
+      expect(gsOutput).not.toContain('does not conform to Adobe');
+      expect(gsOutput).toContain('Page 1');
+    } finally {
+      if (fs.existsSync(tempPdf)) fs.unlinkSync(tempPdf);
+      if (fs.existsSync(tempOut)) fs.unlinkSync(tempOut);
+    }
+  });
 });

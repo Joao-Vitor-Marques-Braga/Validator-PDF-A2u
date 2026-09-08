@@ -38,8 +38,8 @@ export function sanitizeToSingleDotPdfName(rawFileName: string, suffix = '_pdfa2
 /**
  * Constructs an ISO 19005-2 (PDF/A-2u Unicode) conforming XMP metadata packet XML
  */
-export function buildPdfa2uXmpMetadata(title?: string): string {
-  const now = new Date().toISOString();
+export function buildPdfa2uXmpMetadata(title?: string, timestamp?: Date): string {
+  const now = (timestamp || new Date()).toISOString();
   const safeTitle = (title || 'Documento Conforme PDF/A-2u').replace(/[<>&'"]/g, '');
 
   return `<?xpacket begin="\uFEFF" id="W5M0MpCehiHzreSzNTczkc9d"?>
@@ -58,7 +58,7 @@ export function buildPdfa2uXmpMetadata(title?: string): string {
           <rdf:li xml:lang="x-default">${safeTitle}</rdf:li>
         </rdf:Alt>
       </dc:title>
-      <xmp:CreatorTool>PDF/A-2u Guard Converter</xmp:CreatorTool>
+      <xmp:CreatorTool>PDF/A-2u Guard Converter (COLARE TCM-GO)</xmp:CreatorTool>
       <xmp:CreateDate>${now}</xmp:CreateDate>
       <xmp:ModifyDate>${now}</xmp:ModifyDate>
       <pdf:Producer>PDF/A-2u Guard Engine</pdf:Producer>
@@ -70,8 +70,14 @@ export function buildPdfa2uXmpMetadata(title?: string): string {
 
 export class PdfConverterService {
   /**
-   * Converts any PDF file into strict PDF/A-2u conformance with single-dot naming,
-   * automatically compressing it if size exceeds 10MB.
+   * Converts any PDF or document into strict PDF/A-2u (ISO 19005-2 Unicode) conformance,
+   * satisfying Colare (TCM-GO / Centi) validation:
+   * - Reconstructs pages with clean visual rendering & searchable text layer
+   * - Embeds real TrueType fonts with complete /ToUnicode CMaps (fontkit subset)
+   * - Emits text with standard Mode 3 (3 Tr - invisible) without transparency
+   * - Injects official sRGB v2.1 OutputIntent
+   * - Synchronizes /Info dictionary with conforming XMP metadata
+   * - Enforces single-dot naming and <= 10MB file size
    */
   public static async convertToPdfa2u(
     file: File,
@@ -82,40 +88,48 @@ export class PdfConverterService {
     const shouldCompress =
       Boolean(options.forceCompress) || (options.autoCompress !== false && isOverSizeLimit);
 
-    let workingBytes: Uint8Array;
-    let wasCompressed = false;
+    const qualityMap = {
+      'balanced': 0.75,
+      'high-compression': 0.55,
+      'maximum-fidelity': 0.85,
+    };
+    const initialQuality = options.qualityPreset
+      ? qualityMap[options.qualityPreset]
+      : shouldCompress
+        ? 0.70
+        : 0.82;
 
-    if (shouldCompress) {
-      // PDF excede 10MB: aplica compactação adaptativa com redução de qualidade + OCR
-      const qualityMap = {
-        'balanced': 0.70,
-        'high-compression': 0.50,
-        'maximum-fidelity': 0.85,
-      };
-      const initialQuality = options.qualityPreset ? qualityMap[options.qualityPreset] : 0.70;
+    const scaleMap = {
+      'balanced': 1.5,
+      'high-compression': 1.2,
+      'maximum-fidelity': 2.0,
+    };
+    const scale = options.qualityPreset
+      ? scaleMap[options.qualityPreset]
+      : shouldCompress
+        ? 1.4
+        : 1.6;
 
-      workingBytes = await PdfCompressorService.compress(file, {
-        initialQuality,
-        enableOcr: options.enableOcr !== false,
-        ocrLang: options.ocrLang || 'por',
-        onProgress: options.onProgress,
-      });
-      wasCompressed = true;
-    } else {
-      // PDF <= 10MB: NÃO comprime (mantém 100% da fidelidade e páginas originais),
-      // mas o OCR SEMPRE É PASSADO para injetar a camada de texto pesquisável!
-      workingBytes = await PdfCompressorService.processOcrOnly(file, {
-        ocrLang: options.ocrLang || 'por',
-        onProgress: options.onProgress,
-      });
-      wasCompressed = false;
-    }
+    // Process reconstruction & OCR
+    const workingBytes = await PdfCompressorService.compress(file, {
+      initialQuality,
+      scale,
+      enableOcr: options.enableOcr !== false,
+      ocrLang: options.ocrLang || 'por',
+      onProgress: options.onProgress,
+    });
 
-    // Load working document with pdf-lib to inject PDF/A-2u metadata and OutputIntent
-    const pdfDoc = await PDFDocument.load(workingBytes, { ignoreEncryption: true });
+    // Load working document with pdf-lib to finalize metadata, OutputIntent, and Info
+    const pdfDoc = await PDFDocument.load(workingBytes, {
+      ignoreEncryption: true,
+      updateMetadata: false,
+    });
+
+    const now = new Date();
+    const safeTitle = (file.name || 'Documento Conforme PDF/A-2u').replace(/[<>&'"]/g, '');
 
     // 1. Inject strict PDF/A-2u XMP metadata packet
-    const xmpXml = buildPdfa2uXmpMetadata(file.name);
+    const xmpXml = buildPdfa2uXmpMetadata(file.name, now);
 
     const metadataStream = pdfDoc.context.stream(xmpXml, {
       Type: 'Metadata',
@@ -125,17 +139,24 @@ export class PdfConverterService {
     const metadataRef = pdfDoc.context.register(metadataStream);
     pdfDoc.catalog.set(PDFName.of('Metadata'), metadataRef);
 
-    // 2. Inject ISO 19005-2 conforming OutputIntent (sRGB ICC Profile)
+    // 2. Inject ISO 19005-2 conforming OutputIntent (official sRGB ICC Profile)
     injectOutputIntent(pdfDoc);
 
-    // Save final document
-    const finalBytes = await pdfDoc.save({ useObjectStreams: true });
+    // 3. Synchronize Info dictionary with XMP (ISO 19005-2 Clause 6.6 requirement)
+    pdfDoc.setTitle(safeTitle);
+    pdfDoc.setCreator('PDF/A-2u Guard Converter (COLARE TCM-GO)');
+    pdfDoc.setProducer('PDF/A-2u Guard Engine');
+    pdfDoc.setCreationDate(now);
+    pdfDoc.setModificationDate(now);
+
+    // Save final document with standard xref table (maximum compatibility with tribunal preflight parsers)
+    const finalBytes = await pdfDoc.save({ useObjectStreams: false });
 
     // Sanitize output filename to strictly 1 dot
     const outputFileName = sanitizeToSingleDotPdfName(file.name);
     const convertedFile = new File([finalBytes as BlobPart], outputFileName, {
       type: 'application/pdf',
-      lastModified: Date.now(),
+      lastModified: now.getTime(),
     });
 
     const convertedSize = convertedFile.size;
@@ -148,7 +169,7 @@ export class PdfConverterService {
       file: convertedFile,
       originalSize,
       convertedSize,
-      wasCompressed,
+      wasCompressed: shouldCompress,
       reductionPercentage,
     };
   }

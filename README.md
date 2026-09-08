@@ -164,11 +164,16 @@ npm run build
 
 ## 🧪 Cobertura de Testes Automatizados
 
-O projeto conta com **16 testes unitários** com 100% de aprovação, validando:
+O projeto conta com **30 testes unitários** com 100% de aprovação, validando:
 - ✅ Nomes de arquivos válidos e rejeição a múltiplos pontos (`.`).
+- ✅ Limite de tamanho de arquivo (máximo de 10MB exigido pelo Colare).
 - ✅ Extração e parsing de tags XMP (`pdfaid:part`, `pdfaid:conformance`, metadados Dublin Core e datas).
 - ✅ Identificação e rejeição precisa de perfis não compatíveis (`PDF/A-1b`, `PDF/A-2b`, `PDF padrão 1.7`).
 - ✅ Pipeline integrado de validação do `PdfValidatorService`.
+- ✅ Embutimento real de fontes TrueType (`/FontDescriptor`, `/FontFile2`) e tabela de mapeamento `/ToUnicode`.
+- ✅ Modo de texto invisível padronizado `3 Tr` (sem uso de transparência ExtGState `/ca 0`).
+- ✅ Injeção de perfil sRGB ICC v2 oficial e sincronização do dicionário `/Info` com metadados XMP.
+- ✅ Validação estrita de conformidade em preflight Ghostscript (`gs -dPDFA=2`).
 
 ---
 

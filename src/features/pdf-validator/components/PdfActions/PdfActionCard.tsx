@@ -99,16 +99,16 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
         <div className={styles.headerText}>
           <h3 className={styles.title}>
             {isOverSizeLimit
-              ? 'Compactar e Adequar para PDF/A-2u'
-              : 'Converter Arquivo para PDF/A-2u'}
+              ? 'Compactar e Converter para PDF/A-2u (COLARE TCM-GO)'
+              : 'Converter para PDF/A-2u Estrito (COLARE TCM-GO)'}
             <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--accent-primary)' }}>
               100% Client-Side
             </span>
           </h3>
           <p className={styles.subtitle}>
             {isOverSizeLimit
-              ? 'O arquivo excede o limite de 10MB. O sistema aplicará compactação adaptativa com redução de qualidade para adequá-lo ao teto de 10MB, executando o OCR para camada de texto pesquisável e injetando os metadados ISO 19005-2 Unicode.'
-              : 'O arquivo está dentro do limite de 10MB (qualidade original 100% preservada, sem compressão). O OCR será executado para criar a camada de texto pesquisável e os metadados estritos PDF/A-2u serão aplicados.'}
+              ? 'O arquivo excede o limite de 10MB do COLARE. O sistema reconstrói as páginas, aplica compactação adaptativa, embutimento real de fontes TrueType (ToUnicode), OCR em modo invisível 3 Tr e perfil sRGB oficial para aprovação direta no TCM-GO / Centi.'
+              : 'Reconstrói o documento em conformidade estrita com a ISO 19005-2 (PDF/A-2u): fontes TrueType reais 100% embutidas com tabela ToUnicode, camada de texto pesquisável em modo invisível (3 Tr), perfil sRGB oficial e regra de ponto único no nome.'}
           </p>
         </div>
       </div>
@@ -237,13 +237,19 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
 
           <div className={styles.featureBadgesList}>
             <span className={styles.featureBadge}>
+              <CheckCircle2 size={13} /> Compatível COLARE (TCM-GO / Centi)
+            </span>
+            <span className={styles.featureBadge}>
               <CheckCircle2 size={13} /> Norma ISO 19005-2 (PDF/A-2u)
             </span>
             <span className={styles.featureBadge}>
-              <CheckCircle2 size={13} /> OutputIntent sRGB Válido
+              <CheckCircle2 size={13} /> Fontes TrueType Embutidas (ToUnicode)
             </span>
             <span className={styles.featureBadge}>
-              <CheckCircle2 size={13} /> Texto Pesquisável (ToUnicode)
+              <CheckCircle2 size={13} /> Modo de Texto 3 Tr (Sem Transparência)
+            </span>
+            <span className={styles.featureBadge}>
+              <CheckCircle2 size={13} /> OutputIntent sRGB Oficial
             </span>
           </div>
 
@@ -291,6 +297,13 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
               <CheckCircle2 size={16} />
               Validar Documento Gerado
             </button>
+          </div>
+
+          <div style={{ marginTop: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+            <strong style={{ color: 'var(--accent-primary)', display: 'block', marginBottom: '0.25rem' }}>
+              ℹ️ Orientação Técnica Oficial TCM-GO (Colare):
+            </strong>
+            Ao assinar este arquivo no <em>Assinador Digital do TCM</em> antes da transmissão, <strong>NÃO deixe a assinatura visível</strong> (utilize assinatura invisível ou formato P7S envelopado). A inserção de carimbos visuais pode desconfigurar os metadados e camadas estritas do PDF/A-2u. O Tribunal também orienta não utilizar o assinador do SERPRO para arquivos PDF/A.
           </div>
         </div>
       )}
