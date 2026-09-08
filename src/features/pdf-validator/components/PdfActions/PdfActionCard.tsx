@@ -31,6 +31,7 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
   const [result, setResult] = useState<ConversionResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [preset, setPreset] = useState<'balanced' | 'high-compression' | 'maximum-fidelity'>('balanced');
+  const [ocrLang, setOcrLang] = useState<'por' | 'eng'>('por');
 
   const isOverSizeLimit = report.file.size > MAX_FILE_SIZE_BYTES;
 
@@ -49,8 +50,10 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
     try {
       const convResult = await PdfConverterService.convertToPdfa2u(originalFile, {
         qualityPreset: preset,
-        autoCompress: true,
-        forceCompress: isOverSizeLimit,
+        autoCompress: isOverSizeLimit,
+        forceCompress: false,
+        enableOcr: true, // OCR SEMPRE DEVE SER PASSADO NAS CONVERSÕES
+        ocrLang,
         onProgress: (prog) => {
           const pct = Math.round((prog.currentPage / prog.totalPages) * 80) + 10;
           setProgressPct(pct);
@@ -104,13 +107,13 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
           </h3>
           <p className={styles.subtitle}>
             {isOverSizeLimit
-              ? 'O arquivo excede o limite de 10MB. O sistema aplicará compactação inteligente com redução de qualidade para adequá-lo ao tamanho e injetará os metadados de conformidade ISO 19005-2 Unicode.'
-              : 'O arquivo não cumpre estritamente os padrões PDF/A-2u. Converta agora mantendo a fidelidade documental e gerando os metadados XMP estritos e nomenclatura com ponto único.'}
+              ? 'O arquivo excede o limite de 10MB. O sistema aplicará compactação adaptativa com redução de qualidade para adequá-lo ao teto de 10MB, executando o OCR para camada de texto pesquisável e injetando os metadados ISO 19005-2 Unicode.'
+              : 'O arquivo está dentro do limite de 10MB (qualidade original 100% preservada, sem compressão). O OCR será executado para criar a camada de texto pesquisável e os metadados estritos PDF/A-2u serão aplicados.'}
           </p>
         </div>
       </div>
 
-      {/* Preset selector when size is exceeded */}
+      {/* Preset selector only when size is exceeded */}
       {isOverSizeLimit && !result && (
         <div className={styles.optionsSection}>
           <span className={styles.optionsLabel}>Selecione o Nível de Compressão</span>
@@ -144,6 +147,34 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
               <span className={styles.presetName}>Alta Fidelidade (~85%)</span>
               <span className={styles.presetDesc}>Compressão leve priorizando máxima nitidez de detalhes.</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* OCR Mandatory Layer Status & Language Option */}
+      {!result && (
+        <div className={styles.ocrOptionRow}>
+          <div className={styles.ocrMandatoryBadge}>
+            <CheckCircle2 size={18} className={styles.ocrActiveIcon} />
+            <div>
+              <strong style={{ fontSize: '0.88rem' }}>OCR e Camada de Texto Pesquisável (Ativo Obrigatório)</strong>
+              <span className={styles.ocrNote}>
+                O reconhecimento óptico de caracteres é executado em todas as conversões para garantir conformidade estrita com a norma ISO 19005-2 Unicode e aceitação em Tribunais (PJe/ESAJ).
+              </span>
+            </div>
+          </div>
+          <div className={styles.langSelectGroup}>
+            <label htmlFor="ocr-lang-select" className={styles.langLabel}>Idioma do OCR:</label>
+            <select
+              id="ocr-lang-select"
+              value={ocrLang}
+              onChange={(e) => setOcrLang(e.target.value as 'por' | 'eng')}
+              disabled={isProcessing}
+              className={styles.langSelect}
+            >
+              <option value="por">Português (Brasil)</option>
+              <option value="eng">Inglês (English)</option>
+            </select>
           </div>
         </div>
       )}
@@ -204,6 +235,18 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
             Documento Convertido para PDF/A-2u com Sucesso!
           </div>
 
+          <div className={styles.featureBadgesList}>
+            <span className={styles.featureBadge}>
+              <CheckCircle2 size={13} /> Norma ISO 19005-2 (PDF/A-2u)
+            </span>
+            <span className={styles.featureBadge}>
+              <CheckCircle2 size={13} /> OutputIntent sRGB Válido
+            </span>
+            <span className={styles.featureBadge}>
+              <CheckCircle2 size={13} /> Texto Pesquisável (ToUnicode)
+            </span>
+          </div>
+
           <div className={styles.resultStats}>
             <div className={styles.statItem}>
               <span className={styles.statLabel}>Arquivo Gerado</span>
@@ -217,9 +260,13 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
               <span className={styles.statLabel}>Novo Tamanho</span>
               <span className={styles.statValue}>{formatFileSize(result.convertedSize)}</span>
             </div>
-            {result.reductionPercentage > 0 && (
+            {result.wasCompressed && result.reductionPercentage > 0 ? (
               <div className={styles.reductionBadge}>
                 -{result.reductionPercentage}% de redução
+              </div>
+            ) : (
+              <div className={styles.noCompressBadge}>
+                Qualidade 100% preservada (sem compressão)
               </div>
             )}
           </div>

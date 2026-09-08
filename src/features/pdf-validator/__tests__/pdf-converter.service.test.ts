@@ -76,4 +76,29 @@ describe('Service: PdfConverterService', () => {
     expect(convertedReport.isValid).toBe(true);
     expect(convertedReport.detectedProfile).toBe('PDF/A-2u');
   });
+
+  it('should embed OutputIntent and sRGB ICC profile in catalog of converted file', async () => {
+    const originalFile = createInvalidProfilePdf17StandardSample();
+    const result = await PdfConverterService.convertToPdfa2u(originalFile);
+
+    const pdfBuffer = await result.file.arrayBuffer();
+    const { PDFDocument, PDFName } = await import('pdf-lib');
+    const pdfDoc = await PDFDocument.load(pdfBuffer);
+
+    const outputIntents = pdfDoc.catalog.get(PDFName.of('OutputIntents'));
+    expect(outputIntents).toBeDefined();
+  });
+
+  it('should NOT compress when file size is <= 10MB, preserving full quality', async () => {
+    const sampleFile = createInvalidProfilePdf17StandardSample();
+    expect(sampleFile.size).toBeLessThanOrEqual(10 * 1024 * 1024);
+
+    const result = await PdfConverterService.convertToPdfa2u(sampleFile);
+    expect(result.wasCompressed).toBe(false);
+    expect(result.reductionPercentage).toBe(0);
+
+    const convertedReport = await PdfValidatorService.validate(result.file);
+    expect(convertedReport.isValid).toBe(true);
+    expect(convertedReport.detectedProfile).toBe('PDF/A-2u');
+  });
 });

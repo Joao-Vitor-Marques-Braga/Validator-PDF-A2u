@@ -1,5 +1,6 @@
 import { PDFDocument, PDFName } from 'pdf-lib';
 import { MAX_FILE_SIZE_BYTES } from '../domain/rules/file-size.rule';
+import { injectOutputIntent } from '../utils/icc-profile.util';
 import { PdfCompressorService } from './pdf-compressor.service';
 import type { CompressionProgress } from './pdf-compressor.service';
 
@@ -7,6 +8,8 @@ export interface ConvertPdfOptions {
   readonly autoCompress?: boolean; // default true if > 10MB
   readonly forceCompress?: boolean; // force compression regardless of size
   readonly qualityPreset?: 'balanced' | 'high-compression' | 'maximum-fidelity';
+  readonly enableOcr?: boolean; // run OCR/text layer extraction (default true)
+  readonly ocrLang?: string; // default 'por'
   readonly onProgress?: (progress: CompressionProgress) => void;
 }
 
@@ -75,13 +78,15 @@ export class PdfConverterService {
     options: ConvertPdfOptions = {}
   ): Promise<ConversionResult> {
     const originalSize = file.size;
+    const isOverSizeLimit = originalSize > MAX_FILE_SIZE_BYTES;
     const shouldCompress =
-      options.forceCompress || (options.autoCompress !== false && originalSize > MAX_FILE_SIZE_BYTES);
+      Boolean(options.forceCompress) || (options.autoCompress !== false && isOverSizeLimit);
 
     let workingBytes: Uint8Array;
     let wasCompressed = false;
 
     if (shouldCompress) {
+      // PDF excede 10MB: aplica compactação adaptativa com redução de qualidade + OCR
       const qualityMap = {
         'balanced': 0.70,
         'high-compression': 0.50,
@@ -91,18 +96,25 @@ export class PdfConverterService {
 
       workingBytes = await PdfCompressorService.compress(file, {
         initialQuality,
+        enableOcr: options.enableOcr !== false,
+        ocrLang: options.ocrLang || 'por',
         onProgress: options.onProgress,
       });
       wasCompressed = true;
     } else {
-      const buffer = await file.arrayBuffer();
-      workingBytes = new Uint8Array(buffer);
+      // PDF <= 10MB: NÃO comprime (mantém 100% da fidelidade e páginas originais),
+      // mas o OCR SEMPRE É PASSADO para injetar a camada de texto pesquisável!
+      workingBytes = await PdfCompressorService.processOcrOnly(file, {
+        ocrLang: options.ocrLang || 'por',
+        onProgress: options.onProgress,
+      });
+      wasCompressed = false;
     }
 
-    // Load working document with pdf-lib to inject PDF/A-2u metadata
+    // Load working document with pdf-lib to inject PDF/A-2u metadata and OutputIntent
     const pdfDoc = await PDFDocument.load(workingBytes, { ignoreEncryption: true });
 
-    // Inject strict PDF/A-2u XMP metadata packet
+    // 1. Inject strict PDF/A-2u XMP metadata packet
     const xmpXml = buildPdfa2uXmpMetadata(file.name);
 
     const metadataStream = pdfDoc.context.stream(xmpXml, {
@@ -112,6 +124,9 @@ export class PdfConverterService {
 
     const metadataRef = pdfDoc.context.register(metadataStream);
     pdfDoc.catalog.set(PDFName.of('Metadata'), metadataRef);
+
+    // 2. Inject ISO 19005-2 conforming OutputIntent (sRGB ICC Profile)
+    injectOutputIntent(pdfDoc);
 
     // Save final document
     const finalBytes = await pdfDoc.save({ useObjectStreams: true });

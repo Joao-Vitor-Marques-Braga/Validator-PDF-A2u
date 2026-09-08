@@ -10,6 +10,8 @@ export * from './services/pdf-inspector.service';
 export * from './services/xmp-parser.service';
 export * from './services/pdf-compressor.service';
 export * from './services/pdf-converter.service';
+export * from './services/ocr.service';
+export * from './utils/icc-profile.util';
 export * from './hooks/usePdfValidator';
 export * from './components/PdfValidatorWidget';
 export * from './components/FileDropzone/FileDropzone';

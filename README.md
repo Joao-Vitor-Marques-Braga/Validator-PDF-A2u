@@ -52,7 +52,16 @@ A aplicação opera **100% no lado do cliente (client-side)**, realizando a leit
 - **Níveis de Qualidade Selecionáveis:** Predefinições Equilibrada (~70%), Alta Compressão (~50%) ou Alta Fidelidade (~85%), garantindo que o arquivo final fique abaixo do teto de 10MB.
 - **Métricas de Redução em Tempo Real:** Exibe comparativo de tamanho antes/depois (ex.: `14.8 MB` $\rightarrow$ `5.9 MB` `-60%`) e botão de validação imediata no sistema.
 
-### 6. 🎨 Interface Moderna & Modo Claro/Escuro
+### 6. 👁️ Reconhecimento Óptico de Caracteres (OCR) & Camada de Texto Invisível
+- **Motor Tesseract.js Nativo no Navegador:** Para PDFs digitalizados ou escaneados (imagens puras), o sistema executa OCR localmente (suporte a Português e Inglês com download sob demanda de modelos treinados).
+- **Camada de Texto Pesquisável e Selecionável:** Reconhece palavras com coordenadas precisas e injeta uma camada de texto invisível (`opacity: 0`) com mapeamento Unicode (`ToUnicode`), permitindo busca e seleção textual sem alterar o aspecto visual do documento.
+- **Extração Híbrida Inteligente:** Se a página já contiver texto digital vetorial nativo, ele é preservado sem necessidade de reprocessamento por OCR.
+
+### 7. 🎯 Conformidade Estrita ISO 19005-2 (OutputIntents & Perfil ICC sRGB)
+- **Perfil de Cor Embutido:** O catálogo do PDF (`/Catalog`) recebe um dicionário `/OutputIntents` em conformidade com a cláusula 6.2.2 da ISO 19005-2, com um perfil de cores ICC v2 sRGB real embutido (`/DestOutputProfile`).
+- **Aceitação em Tribunais & Validadores Oficiais:** Evita a rejeição por sistemas como PJe, ESAJ, veraPDF e Adobe Acrobat Preflight que exigem a especificação de intenção de saída para PDF/A.
+
+### 8. 🎨 Interface Moderna & Modo Claro/Escuro
 - Suporte nativo a **Modo Claro** e **Modo Escuro** com detecção automática do sistema e persistência no `localStorage`.
 - Drag and Drop dinâmico com feedbacks visuais nos estados: *idle*, *validating*, *success* e *error*.
 - Visualizador de Metadados XMP com suporte à cópia do pacote XML bruto.
@@ -72,7 +81,7 @@ src/
 │       │   ├── FileDropzone/          # Área de upload Drag & Drop
 │       │   ├── ValidationReport/      # Relatório detalhado com checklist
 │       │   ├── MetadataViewer/        # Gaveta de inspeção de metadados XMP
-│       │   ├── PdfActions/            # Card de conversão e compactação
+│       │   ├── PdfActions/            # Card de conversão, compactação e OCR
 │       │   └── PdfValidatorWidget.tsx # Widget principal da feature
 │       ├── domain/                    # Regras de negócio puras
 │       │   └── rules/
@@ -84,8 +93,11 @@ src/
 │       │   ├── xmp-parser.service.ts  # Parser de pacotes XML/XMP
 │       │   ├── pdf-inspector.service.ts# Extrator de metadados
 │       │   ├── pdf-validator.service.ts# Pipeline completo de auditoria
-│       │   ├── pdf-compressor.service.ts# Compactação adaptativa de páginas
-│       │   └── pdf-converter.service.ts# Conversão e injeção XMP PDF/A-2u
+│       │   ├── pdf-compressor.service.ts# Compactação adaptativa de páginas + injeção de texto
+│       │   ├── pdf-converter.service.ts# Conversão e injeção XMP PDF/A-2u + OutputIntent
+│       │   └── ocr.service.ts         # Motor Tesseract.js e worker pool
+│       ├── utils/                     # Utilitários específicos da feature
+│       │   └── icc-profile.util.ts    # Gerador de perfil sRGB ICC v2 e injeção de OutputIntent
 │       ├── hooks/                     # Custom Hook gerenciador de estado
 │       │   └── usePdfValidator.ts     # Hook com ciclo de vida e histórico
 │       ├── types/                     # Tipagens fortes e Result pattern
