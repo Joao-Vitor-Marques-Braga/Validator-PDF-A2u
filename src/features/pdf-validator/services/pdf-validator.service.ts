@@ -5,6 +5,7 @@ import type {
   PdfMetadata,
 } from '../types/validator.types';
 import { validateFileName } from '../domain/rules/file-name.rule';
+import { validateFileSize } from '../domain/rules/file-size.rule';
 import { validatePdfa2uConformance, EXPECTED_PDFA2U_LABEL } from '../domain/rules/pdfa2u-conformance.rule';
 import { PdfInspectorService } from './pdf-inspector.service';
 
@@ -37,7 +38,17 @@ export class PdfValidatorService {
       errors.push(fileNameResult.error.message);
     }
 
-    // Step 2: Binary Inspection and XMP Extraction
+    // Step 2: Validate File Size Limit (Max 10MB)
+    const fileSizeResult = validateFileSize(file.size);
+    if (Result.isOk(fileSizeResult)) {
+      checks.push(fileSizeResult.value.checkItem);
+    } else {
+      isValid = false;
+      checks.push(fileSizeResult.error.checkItem);
+      errors.push(fileSizeResult.error.message);
+    }
+
+    // Step 3: Binary Inspection and XMP Extraction
     try {
       metadata = await PdfInspectorService.inspect(file);
     } catch (err) {
@@ -72,7 +83,7 @@ export class PdfValidatorService {
       };
     }
 
-    // Step 3: PDF Header Validation
+    // Step 4: PDF Header Validation
     if (metadata.pdfHeaderVersion) {
       checks.push({
         id: 'pdf-header-version',
@@ -100,7 +111,7 @@ export class PdfValidatorService {
       errors.push(headerError);
     }
 
-    // Step 4: Strict PDF/A-2u Conformance Validation
+    // Step 5: Strict PDF/A-2u Conformance Validation
     const conformanceResult = validatePdfa2uConformance(metadata);
     if (Result.isOk(conformanceResult)) {
       checks.push(conformanceResult.value.checkItem);

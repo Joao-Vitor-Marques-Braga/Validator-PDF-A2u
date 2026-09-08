@@ -169,3 +169,11 @@ export function createInvalidProfilePdfa2bSample(): File {
   const blob = buildMinimalPdf({ version: '1.7', xmpXml: xmp });
   return new File([blob], 'arquivo_invalido_pdfa2b.pdf', { type: 'application/pdf' });
 }
+
+export function createInvalidSizeLargePdfSample(): File {
+  const validFile = createValidPdfa2uSample();
+  // 11 MB padding array to exceed the 10 MB limit
+  const padding = new Uint8Array(11 * 1024 * 1024);
+  return new File([validFile, padding], 'documento_pesado_excede_10mb.pdf', { type: 'application/pdf' });
+}
+

@@ -5,6 +5,7 @@ import {
   createInvalidNameMultipleDotsSample,
   createInvalidProfilePdf17StandardSample,
   createInvalidProfilePdfa1bSample,
+  createInvalidSizeLargePdfSample,
 } from '../utils/pdf-sample-generator.util';
 
 describe('Service: PdfValidatorService (Pipeline Integration)', () => {
@@ -16,6 +17,20 @@ describe('Service: PdfValidatorService (Pipeline Integration)', () => {
     expect(report.errors).toHaveLength(0);
     expect(report.detectedProfile).toBe('PDF/A-2u');
     expect(report.checks.every((c) => c.passed)).toBe(true);
+    const sizeCheck = report.checks.find((c) => c.category === 'FILE_SIZE');
+    expect(sizeCheck?.passed).toBe(true);
+  });
+
+  it('should reject a file exceeding the 10MB limit', async () => {
+    const largeFile = createInvalidSizeLargePdfSample();
+    const report = await PdfValidatorService.validate(largeFile);
+
+    expect(report.isValid).toBe(false);
+    expect(report.errors.some((e) => e.includes('10 MB'))).toBe(true);
+    const sizeCheck = report.checks.find((c) => c.category === 'FILE_SIZE');
+    expect(sizeCheck).toBeDefined();
+    expect(sizeCheck?.passed).toBe(false);
+    expect(sizeCheck?.severity).toBe('error');
   });
 
   it('should reject a file with multiple dots even if internal XMP is valid', async () => {

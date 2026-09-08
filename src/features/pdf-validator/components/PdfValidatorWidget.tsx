@@ -11,6 +11,7 @@ export const PdfValidatorWidget: React.FC = () => {
     status,
     report,
     currentFileName,
+    currentFile,
     progress,
     validateFile,
     reset,
@@ -40,9 +41,14 @@ export const PdfValidatorWidget: React.FC = () => {
         <>
           <ValidationReport
             report={report}
+            originalFile={currentFile}
             onReset={reset}
             onToggleMetadata={() => setIsMetadataOpen((prev) => !prev)}
             isMetadataOpen={isMetadataOpen}
+            onValidateConverted={(convertedFile) => {
+              setIsMetadataOpen(false);
+              validateFile(convertedFile);
+            }}
           />
 
           {/* Metadata Inspector Drawer */}

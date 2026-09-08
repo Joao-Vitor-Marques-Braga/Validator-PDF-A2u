@@ -57,40 +57,64 @@ export function extractPdfHeaderVersion(buffer: Uint8Array): string | null {
 export function extractRawXmpPacket(buffer: Uint8Array): string | null {
   const decoder = new TextDecoder('utf-8');
 
-  // Strategy 1: Look for standard <?xpacket begin ... ?> ... <?xpacket end
-  const xpacketStart = findBytesSequence(buffer, '<?xpacket begin');
-  if (xpacketStart !== -1) {
+  // Strategy 1: Look for standard <?xpacket begin ... ?> ... <?xpacket end (latest in file)
+  let lastXpacketStart = -1;
+  let searchPos = 0;
+  while (true) {
+    const idx = findBytesSequence(buffer, '<?xpacket begin', searchPos);
+    if (idx === -1) break;
+    lastXpacketStart = idx;
+    searchPos = idx + 15;
+  }
+
+  if (lastXpacketStart !== -1) {
     const xpacketEndMarker = '<?xpacket end';
-    const xpacketEnd = findBytesSequence(buffer, xpacketEndMarker, xpacketStart);
+    const xpacketEnd = findBytesSequence(buffer, xpacketEndMarker, lastXpacketStart);
     if (xpacketEnd !== -1) {
       // Find closing tag `?>` after marker
       const closingBracket = findBytesSequence(buffer, '?>', xpacketEnd);
       const endOffset = closingBracket !== -1 ? closingBracket + 2 : xpacketEnd + xpacketEndMarker.length;
-      const xmpSlice = buffer.subarray(xpacketStart, endOffset);
+      const xmpSlice = buffer.subarray(lastXpacketStart, endOffset);
       return decoder.decode(xmpSlice);
     }
   }
 
-  // Strategy 2: Look for <x:xmpmeta ... </x:xmpmeta>
-  const xmpmetaStart = findBytesSequence(buffer, '<x:xmpmeta');
-  if (xmpmetaStart !== -1) {
+  // Strategy 2: Look for <x:xmpmeta ... </x:xmpmeta> (latest in file)
+  let lastXmpmetaStart = -1;
+  searchPos = 0;
+  while (true) {
+    const idx = findBytesSequence(buffer, '<x:xmpmeta', searchPos);
+    if (idx === -1) break;
+    lastXmpmetaStart = idx;
+    searchPos = idx + 10;
+  }
+
+  if (lastXmpmetaStart !== -1) {
     const xmpmetaEndMarker = '</x:xmpmeta>';
-    const xmpmetaEnd = findBytesSequence(buffer, xmpmetaEndMarker, xmpmetaStart);
+    const xmpmetaEnd = findBytesSequence(buffer, xmpmetaEndMarker, lastXmpmetaStart);
     if (xmpmetaEnd !== -1) {
       const endOffset = xmpmetaEnd + xmpmetaEndMarker.length;
-      const xmpSlice = buffer.subarray(xmpmetaStart, endOffset);
+      const xmpSlice = buffer.subarray(lastXmpmetaStart, endOffset);
       return decoder.decode(xmpSlice);
     }
   }
 
-  // Strategy 3: Look for <rdf:RDF ... </rdf:RDF>
-  const rdfStart = findBytesSequence(buffer, '<rdf:RDF');
-  if (rdfStart !== -1) {
+  // Strategy 3: Look for <rdf:RDF ... </rdf:RDF> (latest in file)
+  let lastRdfStart = -1;
+  searchPos = 0;
+  while (true) {
+    const idx = findBytesSequence(buffer, '<rdf:RDF', searchPos);
+    if (idx === -1) break;
+    lastRdfStart = idx;
+    searchPos = idx + 8;
+  }
+
+  if (lastRdfStart !== -1) {
     const rdfEndMarker = '</rdf:RDF>';
-    const rdfEnd = findBytesSequence(buffer, rdfEndMarker, rdfStart);
+    const rdfEnd = findBytesSequence(buffer, rdfEndMarker, lastRdfStart);
     if (rdfEnd !== -1) {
       const endOffset = rdfEnd + rdfEndMarker.length;
-      const xmpSlice = buffer.subarray(rdfStart, endOffset);
+      const xmpSlice = buffer.subarray(lastRdfStart, endOffset);
       return decoder.decode(xmpSlice);
     }
   }

@@ -9,20 +9,25 @@ import {
   Info,
 } from 'lucide-react';
 import type { ValidationReport as IValidationReport } from '../../types/validator.types';
+import { PdfActionCard } from '../PdfActions/PdfActionCard';
 import styles from './ValidationReport.module.css';
 
 interface ValidationReportProps {
   report: IValidationReport;
+  originalFile?: File | null;
   onReset: () => void;
   onToggleMetadata?: () => void;
   isMetadataOpen?: boolean;
+  onValidateConverted?: (file: File) => void;
 }
 
 export const ValidationReport: React.FC<ValidationReportProps> = ({
   report,
+  originalFile,
   onReset,
   onToggleMetadata,
   isMetadataOpen = false,
+  onValidateConverted,
 }) => {
   const { isValid, file, detectedProfile, detectedProfileDescription, expectedProfile, checks, errors } = report;
 
@@ -119,6 +124,15 @@ export const ValidationReport: React.FC<ValidationReportProps> = ({
         </div>
       )}
 
+      {/* Action Card: Conversion & Compression to PDF/A-2u */}
+      {!isValid && onValidateConverted && (
+        <PdfActionCard
+          report={report}
+          originalFile={originalFile}
+          onValidateConverted={onValidateConverted}
+        />
+      )}
+
       {/* Validation Checks Checklist */}
       <div className={styles.checksSection}>
         <h3 className={styles.sectionTitle}>
@@ -155,7 +169,7 @@ export const ValidationReport: React.FC<ValidationReportProps> = ({
         <div className={`${styles.summaryAlert} ${styles.summaryAlertSuccess}`}>
           <Info size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
           <div>
-            <strong>Arquivo 100% Conforme:</strong> O documento atende a todos os critérios de preservação a longo prazo da norma PDF/A-2u, incluindo suporte a Unicode e nomenclatura padronizada com ponto único.
+            <strong>Arquivo 100% Conforme:</strong> O documento atende a todos os critérios de preservação a longo prazo da norma PDF/A-2u, incluindo suporte a Unicode, limite de tamanho de até 10MB e nomenclatura padronizada com ponto único.
           </div>
         </div>
       )}

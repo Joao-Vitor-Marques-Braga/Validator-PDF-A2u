@@ -18,6 +18,7 @@ const initialState: UsePdfValidatorState = {
   report: null,
   errorMessage: null,
   currentFileName: null,
+  currentFile: null,
   progress: 0,
 };
 
@@ -47,6 +48,7 @@ export function usePdfValidator(): UsePdfValidatorReturn {
       report: null,
       errorMessage: null,
       currentFileName: file.name,
+      currentFile: file,
       progress: 15,
     });
 
@@ -79,6 +81,7 @@ export function usePdfValidator(): UsePdfValidatorReturn {
         report,
         errorMessage: firstErrorMessage,
         currentFileName: file.name,
+        currentFile: file,
         progress: 100,
       });
 
@@ -93,6 +96,7 @@ export function usePdfValidator(): UsePdfValidatorReturn {
         report: null,
         errorMessage: errorMsg,
         currentFileName: file.name,
+        currentFile: file,
         progress: 0,
       });
 

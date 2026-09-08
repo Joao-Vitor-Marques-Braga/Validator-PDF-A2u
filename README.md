@@ -30,14 +30,29 @@ A aplicação opera **100% no lado do cliente (client-side)**, realizando a leit
 - **Exemplos Inválidos:** `documento.v1.pdf`, `contrato.final.assinado.pdf`, `arquivo..pdf`.
 - **Feedback Amigável:** Identificação dos pontos excedentes e sugestão de substituição por sublinhados (`_`) ou hífens (`-`).
 
-### 2. 🔍 Inspeção de Metadados XMP & Conformidade PDF/A-2u
+### 2. 📦 Limite de Tamanho de Arquivo (Máx. 10MB)
+- **Tamanho Máximo Permitido:** O arquivo não pode exceder **10 MB (10.485.760 bytes)**.
+- **Auditoria Instantânea:** A validação ocorre no fluxo client-side, reprovando imediatamente arquivos excedentes.
+- **Diagnóstico Preciso:** Exibe o tamanho real detectado formatado em MB/bytes versus a cota máxima de 10 MB.
+
+### 3. 🔍 Inspeção de Metadados XMP & Conformidade PDF/A-2u
 - **Padrão Estrito:** Aceita unicamente arquivos no perfil **PDF/A-2u** (ISO 19005-2 com nível de conformidade **U - Unicode**).
 - **Rejeição com Diagnóstico Comparativo:** Caso o arquivo não atenda à norma, informa detalhadamente:
   - **Formato/Perfil Detectado:** (ex.: `PDF padrão 1.7`, `PDF/A-1b`, `PDF/A-2b`, `PDF/A-3u`).
   - **Formato Esperado:** `PDF/A-2u (PDF/A-2 Unicode)`.
 - **Inspeção de Cabeçalho:** Verificação da assinatura binária `%PDF-1.x`.
 
-### 3. 🎨 Interface Moderna & Modo Claro/Escuro
+### 4. ⚡ Conversão Automática para PDF/A-2u & Nomenclatura Padronizada
+- **Resolução em 1 Clique:** Caso o arquivo não seja PDF/A-2u ou possua múltiplos pontos no nome, um card de ação inteligente permite convertê-lo instantaneamente direto no navegador.
+- **Injeção Rigorosa de Metadados:** Constrói e anexa o pacote XMP em conformidade estrita com a ISO 19005-2 (Nível U - Unicode), vinculando-o ao catálogo (`/Catalog`) do PDF.
+- **Saneamento de Nomenclatura:** Ajusta nomes com múltiplos pontos (ex.: `documento.v1.pdf` $\rightarrow$ `documento_v1_pdfa2u.pdf`), garantindo aprovação na regra de ponto único.
+
+### 5. 🗜️ Compactação Inteligente com Redução de Qualidade (< 10MB)
+- **Adequação Automática de Tamanho:** Para arquivos com mais de 10MB, o sistema oferece compactação adaptativa via Canvas e re-encoding JPEG.
+- **Níveis de Qualidade Selecionáveis:** Predefinições Equilibrada (~70%), Alta Compressão (~50%) ou Alta Fidelidade (~85%), garantindo que o arquivo final fique abaixo do teto de 10MB.
+- **Métricas de Redução em Tempo Real:** Exibe comparativo de tamanho antes/depois (ex.: `14.8 MB` $\rightarrow$ `5.9 MB` `-60%`) e botão de validação imediata no sistema.
+
+### 6. 🎨 Interface Moderna & Modo Claro/Escuro
 - Suporte nativo a **Modo Claro** e **Modo Escuro** com detecção automática do sistema e persistência no `localStorage`.
 - Drag and Drop dinâmico com feedbacks visuais nos estados: *idle*, *validating*, *success* e *error*.
 - Visualizador de Metadados XMP com suporte à cópia do pacote XML bruto.
@@ -57,16 +72,20 @@ src/
 │       │   ├── FileDropzone/          # Área de upload Drag & Drop
 │       │   ├── ValidationReport/      # Relatório detalhado com checklist
 │       │   ├── MetadataViewer/        # Gaveta de inspeção de metadados XMP
+│       │   ├── PdfActions/            # Card de conversão e compactação
 │       │   └── PdfValidatorWidget.tsx # Widget principal da feature
 │       ├── domain/                    # Regras de negócio puras
 │       │   └── rules/
 │       │       ├── file-name.rule.ts           # Regra de ponto único no nome
+│       │       ├── file-size.rule.ts           # Regra de limite de tamanho (10MB)
 │       │       └── pdfa2u-conformance.rule.ts  # Regra de conformidade PDF/A-2u
 │       ├── services/                  # Orquestração e parse binário
 │       │   ├── binary-reader.util.ts  # Scanner de buffers e streams
 │       │   ├── xmp-parser.service.ts  # Parser de pacotes XML/XMP
 │       │   ├── pdf-inspector.service.ts# Extrator de metadados
-│       │   └── pdf-validator.service.ts# Pipeline completo de auditoria
+│       │   ├── pdf-validator.service.ts# Pipeline completo de auditoria
+│       │   ├── pdf-compressor.service.ts# Compactação adaptativa de páginas
+│       │   └── pdf-converter.service.ts# Conversão e injeção XMP PDF/A-2u
 │       ├── hooks/                     # Custom Hook gerenciador de estado
 │       │   └── usePdfValidator.ts     # Hook com ciclo de vida e histórico
 │       ├── types/                     # Tipagens fortes e Result pattern

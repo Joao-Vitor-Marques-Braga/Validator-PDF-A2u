@@ -5,6 +5,7 @@ import {
   Lock,
   Sun,
   Moon,
+  HardDrive,
 } from 'lucide-react';
 import { PdfValidatorWidget } from './features/pdf-validator';
 import { useTheme } from './shared/hooks/useTheme';
@@ -35,6 +36,10 @@ export const App: React.FC = () => {
               <div className={styles.tag}>
                 <Lock size={14} color="var(--success-text)" />
                 <span>100% Client-Side</span>
+              </div>
+              <div className={styles.tag}>
+                <HardDrive size={14} color="var(--accent-primary)" />
+                <span>Máx. 10MB</span>
               </div>
               <div className={styles.tag}>
                 <FileCheck2 size={14} color="var(--accent-primary)" />

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import type { DragEvent, ChangeEvent } from 'react';
-import { UploadCloud, FileCheck, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { UploadCloud, FileCheck, AlertCircle, Loader2, Sparkles, HardDrive } from 'lucide-react';
 import type { ValidationStatus } from '../../types/validator.types';
 import styles from './FileDropzone.module.css';
 
@@ -111,12 +111,15 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({
             Arraste seu arquivo PDF aqui ou <span className={styles.highlightText}>clique para selecionar</span>
           </h3>
           <p className={styles.subtitle}>
-            O arquivo será inspecionado estritamente no seu navegador quanto à nomenclatura e conformidade com a norma <strong>PDF/A-2u</strong>.
+            O arquivo será inspecionado estritamente no seu navegador quanto à nomenclatura, tamanho máximo e conformidade com a norma <strong>PDF/A-2u</strong>.
           </p>
 
           <div className={styles.rulesBadgeContainer}>
             <span className={styles.ruleBadge}>
               <Sparkles size={13} /> Apenas 1 ponto no nome (.pdf)
+            </span>
+            <span className={styles.ruleBadge}>
+              <HardDrive size={13} /> Tamanho máx. 10MB
             </span>
             <span className={styles.ruleBadge}>
               <FileCheck size={13} /> Padrão Estrito PDF/A-2u

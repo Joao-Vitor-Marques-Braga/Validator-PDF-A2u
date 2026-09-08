@@ -40,7 +40,7 @@ export interface PdfMetadata {
 /**
  * Individual validation check category
  */
-export type ValidationCategory = 'FILE_NAME' | 'PDF_HEADER' | 'PDFA_CONFORMANCE';
+export type ValidationCategory = 'FILE_NAME' | 'FILE_SIZE' | 'PDF_HEADER' | 'PDFA_CONFORMANCE';
 
 /**
  * Single validation check result item
@@ -85,5 +85,6 @@ export interface UsePdfValidatorState {
   readonly report: ValidationReport | null;
   readonly errorMessage: string | null;
   readonly currentFileName: string | null;
+  readonly currentFile: File | null;
   readonly progress: number; // 0 to 100
 }
