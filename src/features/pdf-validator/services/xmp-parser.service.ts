@@ -134,14 +134,19 @@ export class XmpParserService {
         const el = allElements[i];
         const local = (el.localName || el.nodeName).toLowerCase();
 
-        if (local === 'part' || local.endsWith(':part')) {
-          if (!part && el.textContent) part = el.textContent.trim();
-        }
-        if (local === 'conformance' || local.endsWith(':conformance')) {
-          if (!conformance && el.textContent) conformance = el.textContent.trim().toUpperCase();
-        }
-        if (local === 'amd' || local.endsWith(':amd')) {
-          if (!amendment && el.textContent) amendment = el.textContent.trim();
+        const nodeName = (el.nodeName || '').toLowerCase();
+        const isPdfaid = nodeName.startsWith('pdfaid:') || el.namespaceURI === 'http://www.aiim.org/pdfa/ns/id/';
+
+        if (isPdfaid || !nodeName.includes(':')) {
+          if (local === 'part' || local.endsWith(':part')) {
+            if (!part && el.textContent) part = el.textContent.trim();
+          }
+          if (local === 'conformance' || local.endsWith(':conformance')) {
+            if (!conformance && el.textContent) conformance = el.textContent.trim().toUpperCase();
+          }
+          if (local === 'amd' || local.endsWith(':amd')) {
+            if (!amendment && el.textContent) amendment = el.textContent.trim();
+          }
         }
         if (local === 'title' || local.endsWith(':title')) {
           if (!title && el.textContent) title = el.textContent.trim();
@@ -162,14 +167,17 @@ export class XmpParserService {
         // Check attributes on the element (e.g., pdfaid:part="2" pdfaid:conformance="U")
         for (let j = 0; j < el.attributes.length; j++) {
           const attr = el.attributes[j];
-          const attrName = (attr.localName || attr.name).toLowerCase();
-          if (attrName === 'part' || attrName.endsWith(':part')) {
+          const attrFullName = (attr.name || '').toLowerCase();
+          const attrLocal = (attr.localName || attr.name).toLowerCase();
+          const isPdfaidAttr = attrFullName.startsWith('pdfaid:') || attr.namespaceURI === 'http://www.aiim.org/pdfa/ns/id/';
+
+          if ((isPdfaidAttr && attrLocal === 'part') || attrFullName === 'pdfaid:part') {
             if (!part) part = attr.value.trim();
           }
-          if (attrName === 'conformance' || attrName.endsWith(':conformance')) {
+          if ((isPdfaidAttr && attrLocal === 'conformance') || attrFullName === 'pdfaid:conformance') {
             if (!conformance) conformance = attr.value.trim().toUpperCase();
           }
-          if (attrName === 'amd' || attrName.endsWith(':amd')) {
+          if ((isPdfaidAttr && attrLocal === 'amd') || attrFullName === 'pdfaid:amd') {
             if (!amendment) amendment = attr.value.trim();
           }
         }
@@ -179,21 +187,25 @@ export class XmpParserService {
     }
 
     // Strategy 2: Robust Regex Fallback if DOMParser missed anything
+    // Prioritize pdfaid: namespace so we don't accidentally pick up pdfuaid: (PDF/UA)
     if (!part) {
-      const partMatch = cleanedXml.match(/<[^:]*:?part[^>]*>([^<]+)<\/[^:]*:?part>/i) ||
-                         cleanedXml.match(/pdfaid:part=["']([^"']+)["']/i);
+      const partMatch = cleanedXml.match(/<pdfaid:part[^>]*>([^<]+)<\/pdfaid:part>/i) ||
+                        cleanedXml.match(/pdfaid:part=["']([^"']+)["']/i) ||
+                        cleanedXml.match(/<part[^>]*>([^<]+)<\/part>/i);
       if (partMatch) part = partMatch[1].trim();
     }
 
     if (!conformance) {
-      const confMatch = cleanedXml.match(/<[^:]*:?conformance[^>]*>([^<]+)<\/[^:]*:?conformance>/i) ||
-                         cleanedXml.match(/pdfaid:conformance=["']([^"']+)["']/i);
+      const confMatch = cleanedXml.match(/<pdfaid:conformance[^>]*>([^<]+)<\/pdfaid:conformance>/i) ||
+                        cleanedXml.match(/pdfaid:conformance=["']([^"']+)["']/i) ||
+                        cleanedXml.match(/<conformance[^>]*>([^<]+)<\/conformance>/i);
       if (confMatch) conformance = confMatch[1].trim().toUpperCase();
     }
 
     if (!amendment) {
-      const amdMatch = cleanedXml.match(/<[^:]*:?amd[^>]*>([^<]+)<\/[^:]*:?amd>/i) ||
-                        cleanedXml.match(/pdfaid:amd=["']([^"']+)["']/i);
+      const amdMatch = cleanedXml.match(/<pdfaid:amd[^>]*>([^<]+)<\/pdfaid:amd>/i) ||
+                       cleanedXml.match(/pdfaid:amd=["']([^"']+)["']/i) ||
+                       cleanedXml.match(/<amd[^>]*>([^<]+)<\/amd>/i);
       if (amdMatch) amendment = amdMatch[1].trim();
     }
 

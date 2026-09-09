@@ -56,6 +56,7 @@ function drawInvisibleText(
   font: PDFFont
 ): void {
   // Sanitize non-printable control characters that could break font encoding
+  // eslint-disable-next-line no-control-regex
   const clean = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ').trim();
   if (!clean) return;
 
