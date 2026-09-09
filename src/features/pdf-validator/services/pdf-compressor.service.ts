@@ -106,27 +106,21 @@ export class PdfCompressorService {
       !!document.createElement('canvas').getContext?.('2d');
 
     if (!isCanvasSupported) {
-      // In test/headless environments without native Canvas, reconstruct a clean PDF structure
+      // In test/headless environments without native Canvas, preserve the full page content structure
       try {
         const srcDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
         const newDoc = await PDFDocument.create();
         newDoc.registerFontkit(fontkit);
         const fontBytes = await loadConformingTrueTypeFontBytes();
-        const embeddedFont = await newDoc.embedFont(fontBytes, { subset: true });
+        await newDoc.embedFont(fontBytes, {
+          subset: true,
+          customName: 'GLYPHS+LiberationSans-Regular',
+        });
 
-        const pageCount = srcDoc.getPageCount();
-        for (let i = 0; i < pageCount; i++) {
-          const srcPage = srcDoc.getPage(i);
-          const { width, height } = srcPage.getSize();
-          const newPage = newDoc.addPage([width, height]);
-          drawInvisibleText(
-            newPage,
-            'Documento Conforme PDF/A-2u COLARE',
-            50,
-            Math.max(50, height - 50),
-            12,
-            embeddedFont
-          );
+        const pageIndices = srcDoc.getPageIndices();
+        const copiedPages = await newDoc.copyPages(srcDoc, pageIndices);
+        for (const copiedPage of copiedPages) {
+          newDoc.addPage(copiedPage);
         }
 
         return await newDoc.save({ useObjectStreams: false });
@@ -158,7 +152,10 @@ export class PdfCompressorService {
       newPdfDoc.registerFontkit(fontkit);
 
       // Embed the conforming TrueType font with subsetting and ToUnicode CMap
-      const embeddedFont = await newPdfDoc.embedFont(fontBytes, { subset: true });
+      const embeddedFont = await newPdfDoc.embedFont(fontBytes, {
+        subset: true,
+        customName: 'GLYPHS+LiberationSans-Regular',
+      });
 
       for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
         if (onProgress) {
