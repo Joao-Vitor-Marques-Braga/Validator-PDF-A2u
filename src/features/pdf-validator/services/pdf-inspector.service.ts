@@ -1,5 +1,6 @@
 import type { PdfMetadata } from '../types/validator.types';
 import { extractPdfHeaderVersion, extractRawXmpPacket } from '../utils/binary-reader.util';
+import { inspectFontEmbedding } from '../utils/font-inspector.util';
 import { XmpParserService } from './xmp-parser.service';
 
 export class PdfInspectorService {
@@ -19,6 +20,9 @@ export class PdfInspectorService {
     // 3. Parse XMP and resolve profile
     const xmpResult = XmpParserService.parse(rawXmp, headerVersion);
 
+    // 4. Inspect font embedding
+    const fontInspection = inspectFontEmbedding(uint8Array);
+
     return {
       fileName: file.name,
       fileSize: file.size,
@@ -36,6 +40,7 @@ export class PdfInspectorService {
       creatorTool: xmpResult.creatorTool,
       creationDate: xmpResult.creationDate,
       modificationDate: xmpResult.modificationDate,
+      unembeddedFonts: fontInspection.unembeddedFontNames,
     };
   }
 }

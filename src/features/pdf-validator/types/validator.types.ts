@@ -35,12 +35,18 @@ export interface PdfMetadata {
   readonly creatorTool?: string;
   readonly creationDate?: string;
   readonly modificationDate?: string;
+  readonly unembeddedFonts?: readonly string[];
 }
 
 /**
  * Individual validation check category
  */
-export type ValidationCategory = 'FILE_NAME' | 'FILE_SIZE' | 'PDF_HEADER' | 'PDFA_CONFORMANCE';
+export type ValidationCategory =
+  | 'FILE_NAME'
+  | 'FILE_SIZE'
+  | 'PDF_HEADER'
+  | 'PDFA_CONFORMANCE'
+  | 'FONT_EMBEDDING';
 
 /**
  * Single validation check result item

@@ -7,6 +7,7 @@ import type {
 import { validateFileName } from '../domain/rules/file-name.rule';
 import { validateFileSize } from '../domain/rules/file-size.rule';
 import { validatePdfa2uConformance, EXPECTED_PDFA2U_LABEL } from '../domain/rules/pdfa2u-conformance.rule';
+import { validateFontEmbedding } from '../domain/rules/font-embedding.rule';
 import { PdfInspectorService } from './pdf-inspector.service';
 
 export class PdfValidatorService {
@@ -119,6 +120,20 @@ export class PdfValidatorService {
       isValid = false;
       checks.push(conformanceResult.error.checkItem);
       errors.push(conformanceResult.error.message);
+    }
+
+    // Step 6: Font Embedding Diagnostic Check (ISO 19005-2 Clause 6.2.11)
+    const arrayBuffer = await file.arrayBuffer();
+    const fontResult = validateFontEmbedding(arrayBuffer);
+    if (Result.isOk(fontResult)) {
+      checks.push(fontResult.value.checkItem);
+    } else {
+      checks.push(fontResult.error.checkItem);
+      // Warning notifies the user clearly of the unembedded fonts diagnostic
+      if (fontResult.error.checkItem.severity === 'error') {
+        isValid = false;
+        errors.push(fontResult.error.message);
+      }
     }
 
     return {

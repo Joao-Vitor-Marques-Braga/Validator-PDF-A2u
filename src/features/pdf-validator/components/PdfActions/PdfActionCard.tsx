@@ -32,8 +32,41 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [preset, setPreset] = useState<'balanced' | 'high-compression' | 'maximum-fidelity'>('balanced');
   const [ocrLang, setOcrLang] = useState<'por' | 'eng'>('por');
+  const [isBackendOnline, setIsBackendOnline] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const checkBackend = async () => {
+      try {
+        const controller = new AbortController();
+        const t = setTimeout(() => controller.abort(), 1200);
+        const res = await fetch('http://localhost:3001/api/health', { signal: controller.signal });
+        clearTimeout(t);
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data.ghostscriptAvailable) {
+            setIsBackendOnline(true);
+          }
+        }
+      } catch {
+        if (isMounted) setIsBackendOnline(false);
+      }
+    };
+    checkBackend();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const isOverSizeLimit = report.file.size > MAX_FILE_SIZE_BYTES;
+
+  const fontEmbeddingCheck = report.checks.find((c) => c.id === 'font-embedding-check');
+  const hasUnembeddedFonts =
+    Boolean(report.metadata?.unembeddedFonts && report.metadata.unembeddedFonts.length > 0) ||
+    Boolean(fontEmbeddingCheck && !fontEmbeddingCheck.passed);
+  const unembeddedList =
+    report.metadata?.unembeddedFonts ||
+    (fontEmbeddingCheck?.detected ? [fontEmbeddingCheck.detected] : []);
 
   const handleConvert = async () => {
     // If we don't have the original File object (e.g. state reset), we can't proceed
@@ -100,18 +133,44 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
           <h3 className={styles.title}>
             {isOverSizeLimit
               ? 'Compactar e Converter para PDF/A-2u (COLARE TCM-GO)'
-              : 'Converter para PDF/A-2u Estrito (COLARE TCM-GO)'}
-            <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--accent-primary)' }}>
-              100% Client-Side
-            </span>
+              : 'Converter para PDF/A-2u (Modo Vetorial Nativo)'}
+            {isBackendOnline ? (
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#10B981', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                🟢 Motor Ghostscript Nativo Ativo (Nível ABBYY)
+              </span>
+            ) : (
+              <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--accent-primary)' }}>
+                🔵 Modo Client-Side (Navegador)
+              </span>
+            )}
           </h3>
           <p className={styles.subtitle}>
             {isOverSizeLimit
               ? 'O arquivo excede o limite de 10MB do COLARE. O sistema reconstrói as páginas, aplica compactação adaptativa, embutimento real de fontes TrueType (ToUnicode), OCR em modo invisível 3 Tr e perfil sRGB oficial para aprovação direta no TCM-GO / Centi.'
-              : 'Reconstrói o documento em conformidade estrita com a ISO 19005-2 (PDF/A-2u): fontes TrueType reais 100% embutidas com tabela ToUnicode, camada de texto pesquisável em modo invisível (3 Tr), perfil sRGB oficial e regra de ponto único no nome.'}
+              : 'Converte o documento em Modo Vetorial Nativo (Lossless / Sem Rasterização), preservando 100% da nitidez vetorial, texto, layout e assinaturas digitais, aplicando perfil sRGB oficial, metadados ISO 19005-2 e regra de ponto único no nome.'}
           </p>
         </div>
       </div>
+
+      {/* Automatic Font Embedding Information */}
+      {hasUnembeddedFonts && !result && (
+        <div className={styles.preventiveWarningBox}>
+          <Sparkles size={22} className={styles.preventiveWarningIcon} />
+          <div className={styles.preventiveWarningContent}>
+            <div className={styles.preventiveWarningTitle}>
+              Incorporação Automática de Fontes Ativa (Modo Vetorial)
+            </div>
+            <div className={styles.preventiveWarningText}>
+              Este documento foi gerado sem incorporar as fontes (ex:{' '}
+              <strong>{unembeddedList.slice(0, 3).join(', ') || 'Verdana, Times New Roman'}</strong>). 
+              O conversor injetará automaticamente o arquivo da fonte TrueType (<code>/FontFile2</code>) diretamente nos descritores do documento em <strong>modo vetorial nativo</strong>, sem necessidade de outros aplicativos e sem páginas em branco.
+            </div>
+            <div className={styles.preventiveWarningRecommendation}>
+              <strong>Conformidade ISO 19005-2 (Cláusula 6.2.11):</strong> Ao clicar em converter abaixo, o arquivo terá todas as fontes fisicamente incorporadas, garantindo aprovação direta no validador do Centi / TCM-GO.
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Preset selector only when size is exceeded */}
       {isOverSizeLimit && !result && (
@@ -151,15 +210,15 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
         </div>
       )}
 
-      {/* OCR Mandatory Layer Status & Language Option */}
-      {!result && (
+      {/* OCR Mandatory Layer Status & Language Option - only shown when compressing/reconstructing */}
+      {isOverSizeLimit && !result && (
         <div className={styles.ocrOptionRow}>
           <div className={styles.ocrMandatoryBadge}>
             <CheckCircle2 size={18} className={styles.ocrActiveIcon} />
             <div>
               <strong style={{ fontSize: '0.88rem' }}>OCR e Camada de Texto Pesquisável (Ativo Obrigatório)</strong>
               <span className={styles.ocrNote}>
-                O reconhecimento óptico de caracteres é executado em todas as conversões para garantir conformidade estrita com a norma ISO 19005-2 Unicode e aceitação em Tribunais (PJe/ESAJ).
+                O reconhecimento óptico de caracteres é executado em todas as compressões para garantir conformidade estrita com a norma ISO 19005-2 Unicode e preservação de busca.
               </span>
             </div>
           </div>
@@ -191,12 +250,14 @@ export const PdfActionCard: React.FC<PdfActionCardProps> = ({
             {isProcessing ? (
               <>
                 <Loader2 size={18} className={styles.spinAnimation} />
-                Processando...
+                Processando em Modo Vetorial...
               </>
             ) : (
               <>
                 <Sparkles size={18} />
-                {isOverSizeLimit ? 'Compactar e Converter para PDF/A-2u' : 'Converter para PDF/A-2u'}
+                {isOverSizeLimit
+                  ? 'Compactar e Converter para PDF/A-2u'
+                  : 'Converter para PDF/A-2u (Modo Vetorial Nativo)'}
               </>
             )}
           </button>

@@ -1,23 +1,41 @@
+const FONT_NAME_FILE_MAP: Record<string, string> = {
+  'verdana-bold': 'verdanab.ttf',
+  'verdana': 'verdana.ttf',
+  'timesnewromanpsmt': 'times.ttf',
+  'timesnewromanps-boldmt': 'timesbd.ttf',
+  'timesnewromanps-italicmt': 'timesi.ttf',
+  'timesnewromanps-bolditalicmt': 'timesbi.ttf',
+  'arialmt': 'arial.ttf',
+  'arial-boldmt': 'arialbd.ttf',
+};
+
+const fontBytesCache = new Map<string, Uint8Array>();
+
 /**
- * Utility to load and cache the conforming TrueType font for PDF/A-2u text layers.
- * Liberation Sans is metric-compatible with Arial/Helvetica and supports all Portuguese diacritics.
+ * Loads font bytes for a specific font name matching its exact PostScript name,
+ * or falls back to LiberationSans-Regular.ttf.
  */
+export async function loadMatchingTrueTypeFontBytes(rawFontName?: string): Promise<Uint8Array> {
+  const normalized = (rawFontName || '')
+    .toLowerCase()
+    .replace(/^.*[+/]/, '') // remove subset tag like GLYPHS+ or slash
+    .trim();
 
-let cachedFontBytes: Uint8Array | null = null;
+  const fileName = FONT_NAME_FILE_MAP[normalized] || 'LiberationSans-Regular.ttf';
 
-export async function loadConformingTrueTypeFontBytes(): Promise<Uint8Array> {
-  if (cachedFontBytes) {
-    return cachedFontBytes;
+  if (fontBytesCache.has(fileName)) {
+    return fontBytesCache.get(fileName)!;
   }
 
   // 1. Browser environment: Fetch from public/fonts
   if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
     try {
-      const response = await window.fetch('/fonts/LiberationSans-Regular.ttf');
+      const response = await window.fetch(`/fonts/${fileName}`);
       if (response.ok) {
         const buffer = await response.arrayBuffer();
-        cachedFontBytes = new Uint8Array(buffer);
-        return cachedFontBytes;
+        const bytes = new Uint8Array(buffer);
+        fontBytesCache.set(fileName, bytes);
+        return bytes;
       }
     } catch {
       // Fall through to fallback
@@ -29,18 +47,29 @@ export async function loadConformingTrueTypeFontBytes(): Promise<Uint8Array> {
     try {
       const fs = await import('node:fs');
       const path = await import('node:path');
-      const fontPath = path.resolve(process.cwd(), 'public/fonts/LiberationSans-Regular.ttf');
+      const fontPath = path.resolve(process.cwd(), `public/fonts/${fileName}`);
       if (fs.existsSync(fontPath)) {
         const buffer = fs.readFileSync(fontPath);
-        cachedFontBytes = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-        return cachedFontBytes;
+        const bytes = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+        fontBytesCache.set(fileName, bytes);
+        return bytes;
       }
     } catch {
       // Fall through
     }
   }
 
+  // Fallback to default LiberationSans if specific file not found
+  if (fileName !== 'LiberationSans-Regular.ttf') {
+    return loadConformingTrueTypeFontBytes();
+  }
+
   throw new Error(
-    'Não foi possível carregar a fonte TrueType para conformidade PDF/A-2u (/fonts/LiberationSans-Regular.ttf).'
+    `Não foi possível carregar a fonte TrueType para conformidade PDF/A-2u (/fonts/${fileName}).`
   );
 }
+
+export async function loadConformingTrueTypeFontBytes(): Promise<Uint8Array> {
+  return loadMatchingTrueTypeFontBytes('LiberationSans-Regular');
+}
+

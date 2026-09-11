@@ -1,0 +1,16 @@
+{
+  "name": "pdfa-converter-api",
+  "version": "1.0.0",
+  "description": "Microserviço de alta fidelidade para conversão estrita PDF/A-2u (Ghostscript Engine)",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

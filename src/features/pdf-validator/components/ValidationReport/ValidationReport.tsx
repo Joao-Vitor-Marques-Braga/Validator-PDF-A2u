@@ -21,6 +21,9 @@ interface ValidationReportProps {
   onValidateConverted?: (file: File) => void;
 }
 
+// Flag para controle de exibição de conversão (oculto temporariamente para produção)
+const SHOW_CONVERTER_ACTION = false;
+
 export const ValidationReport: React.FC<ValidationReportProps> = ({
   report,
   originalFile,
@@ -124,8 +127,8 @@ export const ValidationReport: React.FC<ValidationReportProps> = ({
         </div>
       )}
 
-      {/* Action Card: Conversion & Compression to PDF/A-2u */}
-      {onValidateConverted && (
+      {/* Action Card: Conversion & Compression to PDF/A-2u (Ocultado para produção) */}
+      {SHOW_CONVERTER_ACTION && onValidateConverted && (
         <PdfActionCard
           report={report}
           originalFile={originalFile}
