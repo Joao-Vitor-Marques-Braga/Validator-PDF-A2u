@@ -128,11 +128,18 @@ export class PdfValidatorService {
     if (Result.isOk(fontResult)) {
       checks.push(fontResult.value.checkItem);
     } else {
+      isValid = false;
       checks.push(fontResult.error.checkItem);
-      // Warning notifies the user clearly of the unembedded fonts diagnostic
-      if (fontResult.error.checkItem.severity === 'error') {
-        isValid = false;
-        errors.push(fontResult.error.message);
+      errors.push(fontResult.error.message);
+    }
+
+    // Regra mandatória: caso tenha algum critério como "Não conforme" (!check.passed), marca como arquivo reprovado
+    if (checks.some((check) => !check.passed)) {
+      isValid = false;
+      for (const check of checks) {
+        if (!check.passed && !errors.includes(check.message)) {
+          errors.push(check.message);
+        }
       }
     }
 

@@ -45,7 +45,7 @@ describe('Auditoria Técnica: Diretrizes de Conversão e Validação PDF/A-2u', 
       if (Result.isFail(validation)) {
         expect(validation.error.checkItem.passed).toBe(false);
         expect(validation.error.checkItem.category).toBe('FONT_EMBEDDING');
-        expect(validation.error.checkItem.severity).toBe('warning');
+        expect(validation.error.checkItem.severity).toBe('error');
         // Mensagem preventiva clara exigida pela diretriz Centi / TCM-GO
         expect(validation.error.message).toContain('Este documento foi gerado sem incorporar as fontes');
         expect(validation.error.message).toContain(

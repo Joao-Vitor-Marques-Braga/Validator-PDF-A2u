@@ -57,7 +57,7 @@ export function validateFontEmbedding(
       expected: 'Fontes 100% incorporadas (/FontFile, /FontFile2 ou /FontFile3)',
       detected: detectedList,
       message: customMessage,
-      severity: 'warning',
+      severity: 'error',
     },
   });
 }

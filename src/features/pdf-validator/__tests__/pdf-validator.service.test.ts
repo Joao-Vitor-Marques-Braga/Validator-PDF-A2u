@@ -61,4 +61,31 @@ describe('Service: PdfValidatorService (Pipeline Integration)', () => {
     expect(report.detectedProfile).toBe('PDF/A-1b');
     expect(report.errors.some((e) => e.includes('PDF/A-1b'))).toBe(true);
   });
+
+  it('should reject file when any check is non-compliant (e.g. unembedded fonts)', async () => {
+    const validSample = createValidPdfa2uSample();
+    const arrayBuf = await validSample.arrayBuffer();
+    const text = new TextDecoder('latin1').decode(arrayBuf);
+
+    // Injeta um dicionário de fonte Type 1 sem FontDescriptor (desincorporada)
+    const injectedText = text.replace(
+      '/Type /Catalog',
+      '/Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Type /Catalog'
+    );
+    const fileWithUnembeddedFont = new File(
+      [new TextEncoder().encode(injectedText)],
+      'VALID_NAME.pdf',
+      { type: 'application/pdf' }
+    );
+
+    const report = await PdfValidatorService.validate(fileWithUnembeddedFont);
+
+    expect(report.isValid).toBe(false);
+    expect(report.checks.some((c) => !c.passed)).toBe(true);
+    const fontCheck = report.checks.find((c) => c.category === 'FONT_EMBEDDING');
+    expect(fontCheck).toBeDefined();
+    expect(fontCheck?.passed).toBe(false);
+    expect(fontCheck?.severity).toBe('error');
+    expect(report.errors.some((err) => err.includes('fontes'))).toBe(true);
+  });
 });
